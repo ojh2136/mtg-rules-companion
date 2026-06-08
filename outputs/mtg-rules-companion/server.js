@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const db = require("./scripts/db");
 const { appCardFromScryfall, getJson, normalizeName, readJson, rootDir, updateMeta, writeJson } = require("./scripts/shared");
 
 const PORT = Number(process.env.PORT || 4177);
@@ -44,6 +45,11 @@ async function apiCardNamed(reqUrl, res) {
     sendJson(res, { error: "Missing card name" }, 400);
     return;
   }
+  const databaseCard = await db.findCard(query);
+  if (databaseCard) {
+    sendJson(res, databaseCard);
+    return;
+  }
   const local = findLocalCard(query);
   if (local) {
     sendJson(res, local);
@@ -57,6 +63,11 @@ async function apiAutocomplete(reqUrl, res) {
   const query = reqUrl.searchParams.get("q") || "";
   if (query.length < 2) {
     sendJson(res, []);
+    return;
+  }
+  const databaseSuggestions = await db.autocompleteCards(query);
+  if (databaseSuggestions?.length) {
+    sendJson(res, databaseSuggestions);
     return;
   }
   const { cards } = cardsDb();
@@ -75,8 +86,13 @@ async function apiAutocomplete(reqUrl, res) {
   sendJson(res, (payload.data || []).slice(0, 12));
 }
 
-function apiCombos(reqUrl, res) {
+async function apiCombos(reqUrl, res) {
   const query = (reqUrl.searchParams.get("q") || "").toLowerCase();
+  const databaseCombos = await db.searchCombos(query);
+  if (databaseCombos) {
+    sendJson(res, databaseCombos);
+    return;
+  }
   const combos = readJson("combos.json", []);
   const filtered = query
     ? combos.filter((combo) => [combo.cards?.join(" "), combo.result, combo.pattern, combo.needs].join(" ").toLowerCase().includes(query))
@@ -84,8 +100,13 @@ function apiCombos(reqUrl, res) {
   sendJson(res, filtered.slice(0, 250));
 }
 
-function apiRulings(reqUrl, res) {
+async function apiRulings(reqUrl, res) {
   const query = (reqUrl.searchParams.get("q") || "").toLowerCase();
+  const databaseRulings = await db.searchRulings(query);
+  if (databaseRulings) {
+    sendJson(res, databaseRulings);
+    return;
+  }
   const rulings = readJson("rulings.json", []);
   const filtered = query
     ? rulings.filter((ruling) => [ruling.title, ruling.question, ruling.whatHappens?.join(" ")].join(" ").toLowerCase().includes(query))
@@ -127,6 +148,7 @@ async function apiIngestSpellbook(res) {
   }
   const combos = [...comboById.values()];
   writeJson("combos.json", combos);
+  await db.upsertCombos(combos);
   updateMeta({ combosUpdatedAt: new Date().toISOString(), comboCount: combos.length, comboSource: "Commander Spellbook variants", spellbookDone: !nextUrl, spellbookNextOffset: nextUrl ? Number(new URL(nextUrl).searchParams.get("offset") || 0) : null });
   sendJson(res, { ok: true, count: combos.length, done: !nextUrl });
 }
@@ -153,20 +175,22 @@ const server = http.createServer(async (req, res) => {
   const reqUrl = new URL(req.url, `http://${req.headers.host || `${HOST}:${PORT}`}`);
   try {
     if (reqUrl.pathname === "/api/status") {
+      const databaseCounts = await db.counts();
       sendJson(res, {
         meta: readJson("meta.json", {}),
-        cards: readJson("cards.json", []).length,
-        combos: readJson("combos.json", []).length,
-        rulings: readJson("rulings.json", []).length
+        database: db.databaseEnabled() ? "postgres" : "json",
+        cards: databaseCounts?.cards ?? readJson("cards.json", []).length,
+        combos: databaseCounts?.combos ?? readJson("combos.json", []).length,
+        rulings: databaseCounts?.rulings ?? readJson("rulings.json", []).length
       });
     } else if (reqUrl.pathname === "/api/cards/named") {
       await apiCardNamed(reqUrl, res);
     } else if (reqUrl.pathname === "/api/cards/autocomplete") {
       await apiAutocomplete(reqUrl, res);
     } else if (reqUrl.pathname === "/api/combos") {
-      apiCombos(reqUrl, res);
+      await apiCombos(reqUrl, res);
     } else if (reqUrl.pathname === "/api/rulings") {
-      apiRulings(reqUrl, res);
+      await apiRulings(reqUrl, res);
     } else if (reqUrl.pathname === "/api/ingest/spellbook" && req.method === "POST") {
       await apiIngestSpellbook(res);
     } else {

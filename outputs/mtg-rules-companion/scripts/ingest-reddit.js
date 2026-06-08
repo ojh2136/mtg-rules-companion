@@ -1,4 +1,5 @@
 const { getJson, updateMeta, writeJson } = require("./shared");
+const db = require("./db");
 
 const SUBREDDIT = process.env.REDDIT_SUBREDDIT || "mtgrules";
 const LIMIT = Number(process.env.REDDIT_LIMIT || 100);
@@ -47,6 +48,10 @@ async function main() {
   }
 
   writeJson("rulings.json", candidates);
+  if (db.databaseEnabled()) {
+    console.log("Saving Reddit ruling candidates to Postgres...");
+    await db.upsertRulings(candidates);
+  }
   updateMeta({
     rulingsUpdatedAt: new Date().toISOString(),
     rulingCandidateCount: candidates.length,

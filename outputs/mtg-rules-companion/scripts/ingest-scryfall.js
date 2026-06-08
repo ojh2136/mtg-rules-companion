@@ -1,4 +1,5 @@
 const { appCardFromScryfall, getJson, normalizeName, updateMeta, writeJson } = require("./shared");
+const db = require("./db");
 
 async function main() {
   console.log("Finding Scryfall Oracle cards bulk file...");
@@ -23,6 +24,10 @@ async function main() {
 
   writeJson("cards.json", cards);
   writeJson("card-index.json", index);
+  if (db.databaseEnabled()) {
+    console.log("Saving Scryfall cards to Postgres...");
+    await db.upsertCards(cards);
+  }
   updateMeta({
     cardsUpdatedAt: new Date().toISOString(),
     cardCount: cards.length,

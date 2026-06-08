@@ -93,4 +93,39 @@ The local server exposes:
 - `GET /api/rulings?q=search`
 - `POST /api/ingest/spellbook`
 
+## Postgres database
+
+The app can use Neon/Postgres when `DATABASE_URL` is set. If `DATABASE_URL` is not set, it falls back to the local JSON files in `data/`.
+
+On Render, add this environment variable to the backend service:
+
+```text
+DATABASE_URL=postgresql://...
+```
+
+Then redeploy and run:
+
+```bash
+npm run db:init
+npm run ingest:scryfall
+npm run ingest:spellbook
+npm run ingest:reddit
+```
+
+`db:init` creates these tables if needed:
+
+- `cards`
+- `combos`
+- `rulings`
+- `ingestion_runs`
+
+The public API routes read from Postgres first when available:
+
+- `GET /api/cards/named?name=Card Name`
+- `GET /api/cards/autocomplete?q=partial`
+- `GET /api/combos?q=search`
+- `GET /api/rulings?q=search`
+
+The ingestion scripts still write local JSON files as a backup, but production should use Postgres for reliable deployed data.
+
 The built-in rule summaries are educational references, not tournament authority. For official calls, verify against the current Wizards of the Coast Comprehensive Rules, Magic Tournament Rules, Infraction Procedure Guide, and Oracle card text.

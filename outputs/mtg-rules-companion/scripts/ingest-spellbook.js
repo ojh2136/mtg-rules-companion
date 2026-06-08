@@ -1,4 +1,5 @@
 const { getJson, readJson, updateMeta, writeJson } = require("./shared");
+const db = require("./db");
 
 const API = "https://backend.commanderspellbook.com";
 const LIMIT = Number(process.env.SPELLBOOK_LIMIT || 25);
@@ -92,6 +93,9 @@ async function main() {
     const combos = [...comboById.values()];
     const nextOffset = payload.next ? Number(new URL(payload.next).searchParams.get("offset") || 0) : null;
     writeJson("combos.json", combos);
+    if (db.databaseEnabled()) {
+      await db.upsertCombos(combos);
+    }
     updateMeta({
       combosUpdatedAt: new Date().toISOString(),
       comboCount: combos.length,
@@ -107,6 +111,9 @@ async function main() {
 
   const combos = [...comboById.values()];
   writeJson("combos.json", combos);
+  if (db.databaseEnabled()) {
+    await db.upsertCombos(combos);
+  }
   updateMeta({
     combosUpdatedAt: new Date().toISOString(),
     comboCount: combos.length,
