@@ -3,301 +3,77 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Stackwise - MTG Rules Companion</title>
+    <title>Stackwise - MTG Ruling Archive</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="app-shell">
-      <aside class="sidebar" aria-label="Workspace navigation">
-        <div class="brand">
-          <div class="brand-mark" aria-hidden="true">S</div>
-          <div>
-            <p class="eyebrow">MTG Rules Companion</p>
-            <h1>Stackwise</h1>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">MTG Ruling Archive</p>
+          <h1>Stackwise</h1>
+        </div>
+        <div id="archiveStatus" class="status-pill">Ready</div>
+      </header>
+
+      <section class="toolbar" aria-label="Archive tools">
+        <label class="search-box">
+          <span>Search</span>
+          <input id="archiveSearch" type="search" placeholder="Search cards, rules words, or saved answers" autocomplete="off" />
+        </label>
+        <button id="newRuling" type="button">New Ruling</button>
+        <button id="exportArchive" class="secondary-action" type="button">Export</button>
+      </section>
+
+      <section class="workspace">
+        <aside class="archive-list-panel" aria-label="Saved rulings">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Saved Rulings</p>
+              <h2 id="archiveCount">0 rulings</h2>
+            </div>
           </div>
-        </div>
+          <div id="archiveList" class="archive-list"></div>
+        </aside>
 
-        <nav class="mode-nav" aria-label="Main tools">
-          <button class="nav-item active" data-view="interactions">
-            <span aria-hidden="true">IO</span>
-            Card Lab
-          </button>
-          <button class="nav-item" data-view="rules">
-            <span aria-hidden="true">CR</span>
-            Rules Map
-          </button>
-          <button class="nav-item" data-view="judge">
-            <span aria-hidden="true">?</span>
-            Ask Ruling
-          </button>
-          <button class="nav-item" data-view="library">
-            <span aria-hidden="true">LB</span>
-            Reference Library
-          </button>
-        </nav>
+        <section class="editor-panel" aria-label="Ruling editor">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Archive Entry</p>
+              <h2 id="editorTitle">New ruling</h2>
+            </div>
+          </div>
 
-        <div class="sidebar-block">
-          <p class="label">Current Focus</p>
-          <div id="focusChips" class="chip-stack"></div>
-        </div>
-
-        <div class="source-note">
-          Uses Magic Comprehensive Rules concepts and Scryfall card search. Verify tournament calls with current official Wizards documents.
-        </div>
-      </aside>
-
-      <main>
-        <section class="topbar" aria-label="Search and status">
-          <label class="search-box">
-            <span aria-hidden="true">Search</span>
-            <input id="globalSearch" type="search" placeholder="Search rules, words, or card names" autocomplete="off" />
+          <label class="field">
+            <span>Question</span>
+            <textarea id="questionInput" placeholder="Paste or write the ruling question here."></textarea>
           </label>
-          <div class="status-pill" id="statusPill">Ready</div>
-        </section>
 
-        <section id="interactions" class="view active">
-          <div class="work-grid">
-            <section class="panel interaction-panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Card Interaction Lab</p>
-                  <h2>Pick cards or a scenario</h2>
-                </div>
-                <button id="clearCards" class="icon-button" title="Clear cards" aria-label="Clear cards">X</button>
-              </div>
+          <label class="field">
+            <span>Answer</span>
+            <textarea id="answerInput" placeholder="Paste the ruling answer here."></textarea>
+          </label>
 
-              <div class="card-search-row">
-                <div class="card-search-field">
-                  <input
-                    id="cardSearch"
-                    type="search"
-                    placeholder="Try: Blood Moon, Lightning Bolt, Elesh Norn"
-                    autocomplete="off"
-                    aria-autocomplete="list"
-                    aria-expanded="false"
-                    aria-controls="cardSuggestions"
-                  />
-                  <div id="cardSuggestions" class="suggestions" role="listbox" aria-label="Card suggestions"></div>
-                </div>
-                <button id="addCard">Add Card</button>
-              </div>
+          <label class="field">
+            <span>Cards / Tags</span>
+            <input id="tagsInput" type="text" placeholder="Sheoldred, Brainstorm, triggered abilities, draw" />
+          </label>
 
-              <div class="selected-cards" id="selectedCards" aria-live="polite"></div>
-
-              <div class="scenario-strip" id="scenarioStrip"></div>
-            </section>
-
-            <section class="panel answer-panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Resolution Path</p>
-                  <h2 id="answerTitle">Choose a scenario</h2>
-                </div>
-                <button id="copyAnswer" class="icon-button" title="Copy explanation" aria-label="Copy explanation">Copy</button>
-              </div>
-              <div id="engineSummary" class="engine-summary"></div>
-              <ol id="answerSteps" class="steps"></ol>
-              <div id="relatedRules" class="related-rules"></div>
-            </section>
+          <div class="editor-actions">
+            <button id="saveRuling" type="button">Save Ruling</button>
+            <button id="copyRuling" class="secondary-action" type="button">Copy</button>
+            <button id="deleteRuling" class="danger-action" type="button">Delete</button>
           </div>
+
+          <article class="preview-card">
+            <p class="eyebrow">Preview</p>
+            <h3 id="previewQuestion">No question selected</h3>
+            <div id="previewAnswer" class="preview-answer">Saved rulings will appear here.</div>
+            <div id="previewTags" class="tag-row"></div>
+          </article>
         </section>
-
-        <section id="rules" class="view">
-          <div class="rules-layout">
-            <section class="rule-list" id="ruleList" aria-label="Rule topics"></section>
-            <section class="panel rule-detail" id="ruleDetail"></section>
-          </div>
-        </section>
-
-        <section id="judge" class="view">
-          <div class="judge-layout">
-            <section class="panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Ruling Question Builder</p>
-                  <h2>Build the table and question</h2>
-                </div>
-              </div>
-
-              <div class="live-board-grid">
-                <section class="live-zone" aria-label="My board">
-                  <div class="live-zone-heading">
-                    <h3>My Board</h3>
-                    <button class="mini-clear" data-clear-zone="mine">Clear</button>
-                  </div>
-                  <div class="live-search-field">
-                    <input id="myBoardSearch" type="search" placeholder="Add a permanent" autocomplete="off" aria-expanded="false" aria-controls="myBoardSuggestions" />
-                    <div id="myBoardSuggestions" class="suggestions" role="listbox" aria-label="My board card suggestions"></div>
-                  </div>
-                  <button class="secondary-action" data-add-zone="mine">Add to My Board</button>
-                  <div id="myBoardCards" class="live-card-list"></div>
-                </section>
-
-                <section class="live-zone" aria-label="Opponent board">
-                  <div class="live-zone-heading">
-                    <h3>Opponent Board</h3>
-                    <button class="mini-clear" data-clear-zone="opponent">Clear</button>
-                  </div>
-                  <div class="live-search-field">
-                    <input id="opponentBoardSearch" type="search" placeholder="Add a permanent" autocomplete="off" aria-expanded="false" aria-controls="opponentBoardSuggestions" />
-                    <div id="opponentBoardSuggestions" class="suggestions" role="listbox" aria-label="Opponent board card suggestions"></div>
-                  </div>
-                  <button class="secondary-action" data-add-zone="opponent">Add to Opponent Board</button>
-                  <div id="opponentBoardCards" class="live-card-list"></div>
-                </section>
-              </div>
-
-              <div class="cast-panel">
-                <div>
-                  <p class="eyebrow">Cast With Current Board</p>
-                  <h3>Spell or permanent being cast</h3>
-                </div>
-                <div class="known-line-picker">
-                  <label>
-                    <span>Known stack line</span>
-                    <select id="knownLineSelect">
-                      <option value="">Choose a learned line</option>
-                    </select>
-                  </label>
-                  <button id="loadKnownLine" class="secondary-action" type="button">Load Line</button>
-                </div>
-                <div class="cast-context">
-                  <label>
-                    <span>Casting player</span>
-                    <select id="castController">
-                      <option value="mine">Me</option>
-                      <option value="opponent">Opponent</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>Mana spent to cast it</span>
-                    <select id="castManaMode">
-                      <option value="paid">Mana was spent</option>
-                      <option value="free">No mana was spent</option>
-                      <option value="unknown">Not sure</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>Timing</span>
-                    <select id="turnPhase">
-                      <option value="main">Main phase</option>
-                      <option value="combat">Combat</option>
-                      <option value="end">End step</option>
-                      <option value="unknown">Not sure</option>
-                    </select>
-                  </label>
-                </div>
-                <div class="live-search-field">
-                  <input id="castSearch" type="search" placeholder="Search the card being cast" autocomplete="off" aria-expanded="false" aria-controls="castSuggestions" />
-                  <div id="castSuggestions" class="suggestions" role="listbox" aria-label="Cast card suggestions"></div>
-                </div>
-                <label class="target-control">
-                  <span>Cast target</span>
-                  <select id="castTarget">
-                    <option value="auto">Auto / choose during analysis</option>
-                  </select>
-                </label>
-                <div class="response-panel">
-                  <div>
-                    <p class="eyebrow">Opponent Response</p>
-                    <h3>Spell cast in response</h3>
-                  </div>
-                  <div class="live-search-field">
-                    <input id="responseSearch" type="search" placeholder="Optional: Counterspell, Swan Song, Flusterstorm" autocomplete="off" aria-expanded="false" aria-controls="responseSuggestions" />
-                    <div id="responseSuggestions" class="suggestions" role="listbox" aria-label="Response card suggestions"></div>
-                  </div>
-                  <label class="target-control">
-                    <span>Response target</span>
-                    <select id="responseTarget">
-                      <option value="cast">The cast spell</option>
-                      <option value="cast-trigger">A cast trigger or ability</option>
-                      <option value="other">Something else</option>
-                    </select>
-                  </label>
-                  <button id="setResponseCard" class="secondary-action">Set Response</button>
-                  <div id="responseCardSlot" class="live-card-list"></div>
-                </div>
-                <div class="cast-actions">
-                  <button id="setCastCard">Set Cast Card</button>
-                  <button id="clearLiveBoard" class="secondary-action">Reset Table</button>
-                </div>
-                <div id="castCardSlot" class="live-card-list"></div>
-              </div>
-              <div class="question-builder-panel">
-                <div>
-                  <p class="eyebrow">Question</p>
-                  <h3>What do you want answered?</h3>
-                </div>
-                <textarea id="rulingQuestionText" placeholder="Example: If I cast Twinflame targeting Etali and my opponent responds with Path to Exile targeting Etali, what happens?"></textarea>
-                <div class="question-actions">
-                  <button id="buildRulingPrompt" type="button">Build Prompt</button>
-                  <button id="copyRulingPrompt" class="secondary-action" type="button">Copy Prompt</button>
-                </div>
-              </div>
-              <button id="analyzeQuestion">Preview Current Board</button>
-            </section>
-            <section class="panel answer-panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Prompt For Codex</p>
-                  <h2 id="questionTitle">Ready to build</h2>
-                </div>
-              </div>
-              <div class="prompt-box">
-                <pre id="rulingPromptOutput">Add cards and write your question, then build a prompt.</pre>
-              </div>
-              <div class="saved-ruling-panel">
-                <div>
-                  <p class="eyebrow">Save Answer</p>
-                  <h3>Your personal ruling note</h3>
-                </div>
-                <textarea id="rulingAnswerText" placeholder="Paste Codex/ChatGPT answer here, then save it as your own reference."></textarea>
-                <div class="question-actions">
-                  <button id="saveRulingNote" type="button">Save Ruling</button>
-                  <button id="clearRulingDraft" class="secondary-action" type="button">Clear Draft</button>
-                </div>
-                <div id="savedRulings" class="saved-rulings"></div>
-              </div>
-              <div id="questionAnswer" class="question-answer"></div>
-            </section>
-          </div>
-        </section>
-
-        <section id="library" class="view">
-          <section class="panel library-page" aria-label="Reference library">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Reference Library</p>
-                <h2>Examples and combo research</h2>
-              </div>
-            </div>
-            <label class="library-search">
-              <span>Filter</span>
-              <input id="librarySearch" type="search" placeholder="Search examples, combo pieces, or results" autocomplete="off" />
-            </label>
-            <div class="spellbook-sync">
-              <button id="syncSpellbook" type="button">Sync Commander Spellbook</button>
-              <button id="clearSpellbookCache" class="secondary-action" type="button">Clear Sync</button>
-              <a href="https://commanderspellbook.com/search/" target="_blank" rel="noreferrer">Open Spellbook</a>
-              <p id="spellbookStatus">Using starter combo set.</p>
-            </div>
-            <div id="backendStatus" class="backend-status">Local database status unavailable.</div>
-            <div class="library-tabs" role="tablist" aria-label="Reference library sections">
-              <button class="library-tab active" type="button" role="tab" aria-selected="true" data-library-tab="community">Community Examples</button>
-              <button class="library-tab" type="button" role="tab" aria-selected="false" data-library-tab="combos">Commander Combos</button>
-            </div>
-            <div class="library-content">
-              <div class="library-pane active" data-library-pane="community" role="tabpanel">
-                <div id="communityExamples" class="community-examples"></div>
-              </div>
-              <div class="library-pane" data-library-pane="combos" role="tabpanel">
-                <div id="comboResearch" class="combo-research"></div>
-              </div>
-            </div>
-          </section>
-        </section>
-      </main>
-    </div>
+      </section>
+    </main>
 
     <script src="app.js"></script>
   </body>
