@@ -1,0 +1,13 @@
+{
+  "name": "stackwise-local",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local MTG ruling companion backend and static app server.",
+  "scripts": {
+    "start": "node server.js",
+    "ingest:scryfall": "node scripts/ingest-scryfall.js",
+    "ingest:spellbook": "node scripts/ingest-spellbook.js",
+    "ingest:reddit": "node scripts/ingest-reddit.js",
+    "ingest:all": "node scripts/ingest-scryfall.js && node scripts/ingest-spellbook.js && node scripts/ingest-reddit.js"
+  }
+}

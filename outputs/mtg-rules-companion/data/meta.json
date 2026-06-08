@@ -1,0 +1,15 @@
+{
+  "cardsUpdatedAt": "2026-06-08T20:03:37.684Z",
+  "combosUpdatedAt": "2026-06-08T20:05:59.459Z",
+  "rulingsUpdatedAt": null,
+  "sources": [
+    "Scryfall bulk oracle_cards"
+  ],
+  "combosLastErrorAt": "2026-06-08T18:45:25.099Z",
+  "combosLastError": "HTTP 429 from https://backend.commanderspellbook.com/variants/?limit=100&offset=0",
+  "comboCount": 11000,
+  "spellbookDone": false,
+  "comboSource": "Commander Spellbook variants",
+  "spellbookNextOffset": 11000,
+  "cardCount": 37628
+}
