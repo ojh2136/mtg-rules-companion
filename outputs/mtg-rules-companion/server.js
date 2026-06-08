@@ -4,7 +4,7 @@ const path = require("path");
 const { appCardFromScryfall, getJson, normalizeName, readJson, rootDir, updateMeta, writeJson } = require("./scripts/shared");
 
 const PORT = Number(process.env.PORT || 4177);
-const HOST = process.env.HOST || "127.0.0.1";
+const HOST = process.env.HOST || (process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1");
 const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",

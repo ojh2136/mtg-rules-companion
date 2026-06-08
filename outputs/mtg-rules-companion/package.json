@@ -4,6 +4,7 @@
   "private": true,
   "description": "Local MTG ruling companion backend and static app server.",
   "scripts": {
+    "build": "node -e \"console.log('No build step needed for static app')\"",
     "start": "node server.js",
     "ingest:scryfall": "node scripts/ingest-scryfall.js",
     "ingest:spellbook": "node scripts/ingest-spellbook.js",
