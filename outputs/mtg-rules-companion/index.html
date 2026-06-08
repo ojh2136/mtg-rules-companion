@@ -20,7 +20,7 @@
         <nav class="mode-nav" aria-label="Main tools">
           <button class="nav-item active" data-view="interactions">
             <span aria-hidden="true">IO</span>
-            Interactions
+            Card Lab
           </button>
           <button class="nav-item" data-view="rules">
             <span aria-hidden="true">CR</span>
@@ -28,7 +28,7 @@
           </button>
           <button class="nav-item" data-view="judge">
             <span aria-hidden="true">?</span>
-            Board Question
+            Ask Ruling
           </button>
           <button class="nav-item" data-view="library">
             <span aria-hidden="true">LB</span>
@@ -114,8 +114,8 @@
             <section class="panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Live Board State</p>
-                  <h2>Build the table</h2>
+                  <p class="eyebrow">Ruling Question Builder</p>
+                  <h2>Build the table and question</h2>
                 </div>
               </div>
 
@@ -223,14 +223,40 @@
                 </div>
                 <div id="castCardSlot" class="live-card-list"></div>
               </div>
-              <button id="analyzeQuestion">Analyze Current Cast</button>
+              <div class="question-builder-panel">
+                <div>
+                  <p class="eyebrow">Question</p>
+                  <h3>What do you want answered?</h3>
+                </div>
+                <textarea id="rulingQuestionText" placeholder="Example: If I cast Twinflame targeting Etali and my opponent responds with Path to Exile targeting Etali, what happens?"></textarea>
+                <div class="question-actions">
+                  <button id="buildRulingPrompt" type="button">Build Prompt</button>
+                  <button id="copyRulingPrompt" class="secondary-action" type="button">Copy Prompt</button>
+                </div>
+              </div>
+              <button id="analyzeQuestion">Preview Current Board</button>
             </section>
             <section class="panel answer-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Live Ruling</p>
-                  <h2 id="questionTitle">Waiting for a cast</h2>
+                  <p class="eyebrow">Prompt For Codex</p>
+                  <h2 id="questionTitle">Ready to build</h2>
                 </div>
+              </div>
+              <div class="prompt-box">
+                <pre id="rulingPromptOutput">Add cards and write your question, then build a prompt.</pre>
+              </div>
+              <div class="saved-ruling-panel">
+                <div>
+                  <p class="eyebrow">Save Answer</p>
+                  <h3>Your personal ruling note</h3>
+                </div>
+                <textarea id="rulingAnswerText" placeholder="Paste Codex/ChatGPT answer here, then save it as your own reference."></textarea>
+                <div class="question-actions">
+                  <button id="saveRulingNote" type="button">Save Ruling</button>
+                  <button id="clearRulingDraft" class="secondary-action" type="button">Clear Draft</button>
+                </div>
+                <div id="savedRulings" class="saved-rulings"></div>
               </div>
               <div id="questionAnswer" class="question-answer"></div>
             </section>

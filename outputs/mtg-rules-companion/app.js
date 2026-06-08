@@ -571,10 +571,12 @@ const commanderCombos = [
 
 const SPELLBOOK_API = "https://backend.commanderspellbook.com";
 const SPELLBOOK_CACHE_KEY = "stackwise.spellbookCombos.v1";
+const SAVED_RULINGS_KEY = "stackwise.savedRulings.v1";
 const SPELLBOOK_SYNC_LIMIT = 100;
 const SPELLBOOK_MAX_PAGES = 220;
 let spellbookCombos = [];
 let spellbookSyncing = false;
+let savedRulings = [];
 
 let selectedCards = [];
 let activeRuleId = "priority";
@@ -1250,6 +1252,7 @@ async function addLiveCard(zone, query) {
   if (input) input.value = "";
   renderLiveBoard();
   analyzeLiveBoard();
+  renderRulingPrompt();
   setStatus(`${liveZoneLabel(zone)} updated`);
 }
 
@@ -1261,6 +1264,7 @@ function removeLiveCard(zone, index) {
   }
   renderLiveBoard();
   analyzeLiveBoard();
+  renderRulingPrompt();
 }
 
 function resetLiveBoardState() {
@@ -1326,6 +1330,7 @@ async function loadCommunityExample(exampleId) {
     hideLiveSuggestions();
     renderLiveBoard();
     analyzeLiveBoard();
+    renderRulingPrompt();
     switchView("judge");
     if (example.ruling) renderKnownRuling(example.ruling);
     setStatus("Example loaded");
@@ -1336,6 +1341,134 @@ async function loadCommunityExample(exampleId) {
 
 function boardNames(cards) {
   return cards.length ? cards.map((card) => card.name).join(", ") : "none";
+}
+
+function selectedTargetLabel(value) {
+  if (!value || value === "auto") return "Auto / not specified";
+  if (value === "cast") return liveBoard.cast ? `${liveBoard.cast.name} on the stack` : "The cast spell";
+  if (value === "cast-trigger") return "A cast trigger or ability";
+  if (value === "other") return "Something else";
+  const target = findBoardTarget(value);
+  return target ? target.label : value;
+}
+
+function cardLine(card) {
+  if (!card) return "none";
+  const type = card.typeLine ? ` (${card.typeLine})` : "";
+  return `${card.name}${type}`;
+}
+
+function buildRulingPromptText() {
+  const question = ($("#rulingQuestionText")?.value || "").trim();
+  const lines = [
+    "Please answer this Magic: The Gathering rules question in a clear judge-style way.",
+    "",
+    "Use this output style:",
+    "What happens:",
+    "1. Short step-by-step resolution.",
+    "2. Say which object resolves first.",
+    "3. Say whether targets are still legal.",
+    "4. Say what happens to any spell, ability, trigger, or permanent involved.",
+    "",
+    "Board state:",
+    `My board: ${boardNames(liveBoard.mine)}`,
+    `Opponent board: ${boardNames(liveBoard.opponent)}`,
+    "",
+    "Stack / action:",
+    `Casting player: ${liveBoard.castController === "mine" ? "Me" : "Opponent"}`,
+    `Timing: ${liveBoard.turnPhase}`,
+    `Mana spent: ${liveBoard.manaMode}`,
+    `Spell or permanent being cast: ${cardLine(liveBoard.cast)}`,
+    `Cast target: ${selectedTargetLabel(liveBoard.castTarget)}`,
+    `Opponent response: ${cardLine(liveBoard.response)}`,
+    `Response target: ${selectedTargetLabel(liveBoard.responseTarget)}`,
+    "",
+    "Question:",
+    question || "What happens from this board state and stack?"
+  ];
+
+  const relevantCards = [...liveBoard.mine, ...liveBoard.opponent, liveBoard.cast, liveBoard.response].filter(Boolean);
+  if (relevantCards.length) {
+    lines.push("", "Relevant Oracle text:");
+    relevantCards.forEach((card) => {
+      lines.push(`- ${card.name}: ${card.text || card.typeLine || "Oracle text unavailable in app cache."}`);
+    });
+  }
+
+  return lines.join("\n");
+}
+
+function renderRulingPrompt() {
+  const output = $("#rulingPromptOutput");
+  if (!output) return "";
+  const prompt = buildRulingPromptText();
+  output.textContent = prompt;
+  $("#questionTitle").textContent = liveBoard.cast ? `Ask about ${liveBoard.cast.name}` : "Prompt ready";
+  return prompt;
+}
+
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
+function loadSavedRulings() {
+  try {
+    savedRulings = JSON.parse(localStorage.getItem(SAVED_RULINGS_KEY) || "[]");
+  } catch {
+    savedRulings = [];
+  }
+}
+
+function saveSavedRulings() {
+  localStorage.setItem(SAVED_RULINGS_KEY, JSON.stringify(savedRulings.slice(0, 30)));
+}
+
+function renderSavedRulings() {
+  const container = $("#savedRulings");
+  if (!container) return;
+  if (!savedRulings.length) {
+    container.innerHTML = `<div class="empty-state">No saved ruling notes yet.</div>`;
+    return;
+  }
+  container.innerHTML = savedRulings
+    .slice(0, 8)
+    .map(
+      (ruling, index) => `
+        <article class="saved-ruling-card">
+          <strong>${escapeHtml(ruling.title)}</strong>
+          <p>${escapeHtml(ruling.answer.slice(0, 220))}${ruling.answer.length > 220 ? "..." : ""}</p>
+          <button type="button" data-load-saved-ruling="${index}">Load</button>
+          <button type="button" data-delete-saved-ruling="${index}">Delete</button>
+        </article>
+      `
+    )
+    .join("");
+}
+
+function saveCurrentRulingNote() {
+  const prompt = buildRulingPromptText();
+  const answer = ($("#rulingAnswerText")?.value || "").trim();
+  if (!answer) {
+    setStatus("Paste an answer first");
+    return;
+  }
+  const title = liveBoard.cast ? `${liveBoard.cast.name} ruling` : "Saved ruling";
+  savedRulings = [{ title, prompt, answer, savedAt: new Date().toISOString() }, ...savedRulings].slice(0, 30);
+  saveSavedRulings();
+  renderSavedRulings();
+  setStatus("Ruling saved");
 }
 
 function controllerLabel(value = liveBoard.castController) {
@@ -2548,6 +2681,7 @@ function explainSelectedCards() {
 function analyzeQuestion() {
   hideLiveSuggestions();
   analyzeLiveBoard();
+  renderRulingPrompt();
 }
 
 function switchLibraryTab(tabName) {
@@ -2731,6 +2865,47 @@ function bindEvents() {
   $("#syncSpellbook").addEventListener("click", syncCommanderSpellbook);
   $("#clearSpellbookCache").addEventListener("click", clearSpellbookCache);
 
+  $("#buildRulingPrompt").addEventListener("click", () => {
+    renderRulingPrompt();
+    setStatus("Prompt built");
+  });
+
+  $("#copyRulingPrompt").addEventListener("click", async () => {
+    await copyText(renderRulingPrompt());
+    setStatus("Prompt copied");
+  });
+
+  $("#rulingQuestionText").addEventListener("input", () => {
+    renderRulingPrompt();
+  });
+
+  $("#saveRulingNote").addEventListener("click", saveCurrentRulingNote);
+
+  $("#clearRulingDraft").addEventListener("click", () => {
+    $("#rulingAnswerText").value = "";
+    setStatus("Draft cleared");
+  });
+
+  $("#savedRulings").addEventListener("click", (event) => {
+    const loadButton = event.target.closest("[data-load-saved-ruling]");
+    const deleteButton = event.target.closest("[data-delete-saved-ruling]");
+    if (loadButton) {
+      const ruling = savedRulings[Number(loadButton.dataset.loadSavedRuling)];
+      if (!ruling) return;
+      $("#rulingPromptOutput").textContent = ruling.prompt;
+      $("#rulingAnswerText").value = ruling.answer;
+      $("#questionTitle").textContent = ruling.title;
+      setStatus("Saved ruling loaded");
+      return;
+    }
+    if (deleteButton) {
+      savedRulings.splice(Number(deleteButton.dataset.deleteSavedRuling), 1);
+      saveSavedRulings();
+      renderSavedRulings();
+      setStatus("Saved ruling deleted");
+    }
+  });
+
   $("#clearLiveBoard").addEventListener("click", () => {
     resetLiveBoardState();
     $("#castController").value = liveBoard.castController;
@@ -2741,32 +2916,38 @@ function bindEvents() {
     hideLiveSuggestions();
     renderLiveBoard();
     analyzeLiveBoard();
+    renderRulingPrompt();
     setStatus("Table reset");
   });
 
   $("#castController").addEventListener("change", (event) => {
     liveBoard.castController = event.target.value;
     analyzeLiveBoard();
+    renderRulingPrompt();
   });
 
   $("#castManaMode").addEventListener("change", (event) => {
     liveBoard.manaMode = event.target.value;
     analyzeLiveBoard();
+    renderRulingPrompt();
   });
 
   $("#turnPhase").addEventListener("change", (event) => {
     liveBoard.turnPhase = event.target.value;
     analyzeLiveBoard();
+    renderRulingPrompt();
   });
 
   $("#responseTarget").addEventListener("change", (event) => {
     liveBoard.responseTarget = event.target.value;
     analyzeLiveBoard();
+    renderRulingPrompt();
   });
 
   $("#castTarget").addEventListener("change", (event) => {
     liveBoard.castTarget = event.target.value;
     analyzeLiveBoard();
+    renderRulingPrompt();
   });
 
   $$("[data-clear-zone]").forEach((button) => {
@@ -2774,6 +2955,7 @@ function bindEvents() {
       liveBoard[button.dataset.clearZone] = [];
       renderLiveBoard();
       analyzeLiveBoard();
+      renderRulingPrompt();
     });
   });
 
@@ -2815,6 +2997,7 @@ function bindEvents() {
 renderScenarios();
 renderCommunityExamples();
 renderKnownLineOptions();
+loadSavedRulings();
 loadSpellbookCache();
 renderCommanderCombos();
 loadBackendCombos();
@@ -2823,4 +3006,6 @@ renderSelectedCards();
 renderRulesList();
 renderAnswer(scenarios[0].title, scenarios[0].steps, scenarios[0].ruleIds);
 renderLiveBoard();
+renderRulingPrompt();
+renderSavedRulings();
 bindEvents();
